@@ -12,6 +12,7 @@ add_library(gds_runners STATIC
   src/naive_gds_runner.cpp
   src/optimized_gds_runner.cpp
   src/gds_cache.cpp
+  src/cached_gds_runner.cpp
 )
 
 target_include_directories(gds_runners
@@ -23,4 +24,13 @@ target_link_libraries(gds_runners
   PUBLIC
     CUDA::cudart
     CUDA::cuFile
+)
+
+add_executable(gds_bench
+  src/bench_main.cpp
+)
+
+target_link_libraries(gds_bench
+  PRIVATE
+    gds_runners
 )

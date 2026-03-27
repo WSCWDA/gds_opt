@@ -1,1 +1,3 @@
-// Placeholder for cached GDS runner interface.
+#pragma once
+
+#include "cached_gds_runner.h"
