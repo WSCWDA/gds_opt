@@ -61,9 +61,9 @@ If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 ### Basic CPU baseline
 
 ```bash
-./build/gds_bench \
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench \
   --mode=cpu \
-  --file=/data/test.dat \
+  --file=/mnt/gds2/cwd_test/test.dat \
   --size=1048576 \
   --iters=100 \
   --read=1
@@ -72,9 +72,9 @@ If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 ### Naive GDS mode
 
 ```bash
-./build/gds_bench \
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench \
   --mode=gds_naive \
-  --file=/data/test.dat \
+  --file=/mnt/gds2/cwd_test/test.dat \
   --size=1048576 \
   --iters=100 \
   --read=1
@@ -83,9 +83,9 @@ If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 ### Optimized GDS mode
 
 ```bash
-./build/gds_bench \
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench \
   --mode=gds_opt \
-  --file=/data/test.dat \
+  --file=/mnt/gds2/cwd_test/test.dat \
   --size=1048576 \
   --iters=100 \
   --read=1
@@ -94,9 +94,9 @@ If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 ### Cached GDS mode (rotating buffers)
 
 ```bash
-./build/gds_bench \
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench \
   --mode=gds_cache \
-  --file=/data/test.dat \
+  --file=/mnt/gds2/cwd_test/test.dat \
   --size=1048576 \
   --iters=100 \
   --buffers=4 \
@@ -106,9 +106,9 @@ If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 ### Append benchmark output to CSV
 
 ```bash
-./build/gds_bench \
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench \
   --mode=gds_cache \
-  --file=/data/test.dat \
+  --file=/mnt/gds2/cwd_test/test.dat \
   --size=1048576 \
   --iters=100 \
   --buffers=4 \
@@ -197,7 +197,7 @@ Useful overrides:
 
 ```bash
 BIN_PATH=./build/gds_bench \
-DATA_FILE=/data/test.dat \
+DATA_FILE=/mnt/gds2/cwd_test/test.dat \
 RESULTS_DIR=results \
 CACHE_BUFFERS=4 \
 REPEATS=3 \
@@ -246,7 +246,7 @@ Optional environment variables:
 ### Run workload
 
 ```bash
-./build/gds_bench --mode=gds_cache --file=/data/test.dat --size=1048576 --iters=100 --buffers=4 --read=1
+CUDA_VISIBLE_DEVICES=3 ./build/gds_bench --mode=gds_cache --file=/mnt/gds2/cwd_test/test.dat --size=1048576 --iters=100 --buffers=4 --read=1
 ```
 
 ### Stop tracing
