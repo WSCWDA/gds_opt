@@ -34,3 +34,15 @@ target_link_libraries(gds_bench
   PRIVATE
     gds_runners
 )
+
+add_executable(gds_microbench
+  src/microbench_main.cpp
+)
+
+target_link_libraries(gds_microbench
+  PRIVATE
+    CUDA::cudart
+    CUDA::cuFile
+)
+
+target_compile_features(gds_microbench PRIVATE cxx_std_17)
