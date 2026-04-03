@@ -23,9 +23,14 @@
 #include <unistd.h>
 #include <vector>
 
+// Path under test:
+// 1) Buffered POSIX -> CPU buffer -> cudaMemcpy
+// 2) O_DIRECT POSIX -> pinned host buffer -> cudaMemcpy
+// 3) cuFileRead directly into GPU buffer
 enum class PathType { Buffered, Direct, Gds };
 enum class AccessPattern { Sequential, Random };
 
+// Runtime configuration parsed from CLI.
 struct Config {
   std::string file_path;
   std::uint64_t file_size{0};
@@ -39,6 +44,7 @@ struct Config {
   std::string path_arg{"all"};
 };
 
+// Aggregated metrics for one (path, io_size) run.
 struct Metrics {
   std::uint64_t total_bytes{0};
   double throughput_gbps{0.0};
@@ -51,6 +57,7 @@ struct Metrics {
   double wall_time_us{0.0};
 };
 
+// Result container with either metrics or a clear error message.
 struct RunResult {
   bool ok{false};
   std::string error;
@@ -126,6 +133,7 @@ void print_usage(const char* argv0) {
       << "       [--pattern=seq|rand] [--aligned=1|0] [--csv=OUT.csv]\\n";
 }
 
+// Parse CLI arguments into Config.
 bool parse_args(int argc, char** argv, Config* cfg, std::string* err) {
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
@@ -220,6 +228,7 @@ std::vector<PathType> resolve_paths(const std::string& path_arg) {
   return {PathType::Buffered, PathType::Direct, PathType::Gds};
 }
 
+// Compute percentile in microseconds using linear interpolation.
 double percentile_us(std::vector<double> vals, double pct) {
   if (vals.empty()) return 0.0;
   std::sort(vals.begin(), vals.end());
@@ -231,6 +240,7 @@ double percentile_us(std::vector<double> vals, double pct) {
   return vals[lo] * (1.0 - frac) + vals[hi] * frac;
 }
 
+// Append one summary line to CSV; create a header if file is empty.
 void append_csv(const std::string& csv_path, PathType path, std::size_t io_size, const Config& cfg,
                 const Metrics& m) {
   if (csv_path.empty()) return;
@@ -264,6 +274,7 @@ void append_csv(const std::string& csv_path, PathType path, std::size_t io_size,
       << m.throughput_gbps << ',' << m.avg_latency_us << ',' << m.p99_latency_us << '\n';
 }
 
+// Produce an io_size-aligned offset for sequential/random access.
 std::size_t aligned_offset(std::size_t req_idx, std::size_t io_size, std::uint64_t file_size,
                            AccessPattern pat, std::mt19937_64* rng) {
   const std::size_t slot_count = (file_size > io_size) ? static_cast<std::size_t>((file_size - io_size) / io_size + 1)
@@ -275,11 +286,13 @@ std::size_t aligned_offset(std::size_t req_idx, std::size_t io_size, std::uint64
   return dist(*rng) * io_size;
 }
 
+// Optional non-aligned perturbation (used only for buffered path).
 std::size_t maybe_unalign(std::size_t offset, bool aligned) {
   if (aligned) return offset;
   return offset + 128;
 }
 
+// Execute one benchmark case for (path, io_size) across all requested threads/requests.
 RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::uint64_t file_size) {
   RunResult rr;
 
@@ -342,6 +355,10 @@ RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::ui
 
   auto t_wall0 = std::chrono::steady_clock::now();
 
+  // Worker thread:
+  // - prepares per-thread buffers
+  // - issues requests in queue_depth-sized batches
+  // - records per-request latency
   auto worker = [&](std::size_t tid, std::size_t begin, std::size_t end) {
     std::mt19937_64 rng(0x1234ULL + tid * 131ULL);
 
@@ -373,6 +390,7 @@ RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::ui
 
         auto t0 = std::chrono::steady_clock::now();
 
+        // POSIX paths: pread into host buffer, then memcpy to GPU.
         if (path == PathType::Buffered || path == PathType::Direct) {
           auto rc0 = std::chrono::steady_clock::now();
           ssize_t r = pread(fd, host_buf, io_size, static_cast<off_t>(off));
@@ -394,6 +412,7 @@ RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::ui
             memcpy_us_total += std::chrono::duration<double, std::micro>(mc1 - mc0).count();
           }
         } else {
+          // GDS path: read directly into GPU buffer.
           auto rc0 = std::chrono::steady_clock::now();
           ssize_t r = cuFileRead(cfr, gpu_buf, io_size, static_cast<off_t>(off), 0);
           auto rc1 = std::chrono::steady_clock::now();
@@ -463,6 +482,7 @@ RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::ui
   rr.metrics.wall_time_us = std::chrono::duration<double, std::micro>(t_wall1 - t_wall0).count();
   rr.metrics.cpu_time_us = cpu_us_total;
   rr.metrics.memcpy_time_us = memcpy_us_total;
+  // Throughput based on total moved bytes and end-to-end wall time.
   rr.metrics.throughput_gbps =
       (rr.metrics.wall_time_us > 0.0)
           ? (static_cast<double>(rr.metrics.total_bytes) / (rr.metrics.wall_time_us / 1e6)) / 1e9
@@ -479,6 +499,7 @@ RunResult run_one(PathType path, const Config& cfg, std::size_t io_size, std::ui
   return rr;
 }
 
+// Human-readable console output for one benchmark case.
 void print_result(PathType path, std::size_t io_size, const Config& cfg, const RunResult& rr) {
   std::cout << "[" << to_string(path) << "] io_size=" << io_size
             << " pattern=" << to_string(cfg.pattern) << " aligned=" << (cfg.aligned ? 1 : 0)
