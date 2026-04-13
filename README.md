@@ -51,6 +51,8 @@ This builds:
 
 - `gds_runners` (static library)
 - `gds_bench` (CLI benchmark executable)
+- `gds_microbench` (microbenchmark executable)
+- `gds_imagenet_bench` (ImageNet small-file replay benchmark)
 
 If CMake cannot find CUDA, set `CUDAToolkit_ROOT` to your toolkit install path.
 
@@ -271,6 +273,16 @@ The parser prints a text summary and writes CSV containing:
 
 - summary counts for `map_event`, `bounce_event`, `io_completion_event`
 - per-event counts and category mapping
+
+---
+
+## 9) ImageNet 小文件场景补充基准设计
+
+详见：`docs/imagenet_smallfile_benchmark.md`。
+
+- 数据集默认目录：`/home/cwd/dataset/ImageNet/train/`
+- 目标问题：buffered/direct/gds 小文件差异、buffered 的 page cache 收益、warm run 对比
+- 工具程序：`./build/gds_imagenet_bench`
 
 ---
 

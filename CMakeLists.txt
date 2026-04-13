@@ -73,3 +73,15 @@ target_link_libraries(gds_microbench
 )
 
 target_compile_features(gds_microbench PRIVATE cxx_std_17)
+
+add_executable(gds_imagenet_bench
+  src/imagenet_compare_main.cpp
+)
+
+target_link_libraries(gds_imagenet_bench
+  PRIVATE
+    CUDA::cudart
+    ${CUFILE_TARGET}
+)
+
+target_compile_features(gds_imagenet_bench PRIVATE cxx_std_17)
