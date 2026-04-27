@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "groute"
+version = "0.1.0"
+description = "G-Route MVP: GPU-aware I/O routing runtime skeleton"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "G-Route Team"}]
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["groute*"]
