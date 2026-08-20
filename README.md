@@ -1,5 +1,13 @@
 # GPUDirect Storage Benchmark Prototype
 
+## GDS-HCache MVP
+
+仓库现包含一个独立的只读双路径原型：大块请求保持`cuFile/GDS`直通，热点小读由有容量上限的pinned Host DRAM cache服务，并使用`io_uring + O_DIRECT`完成cache fill。
+
+- 代码：`gds-hcache/`
+- 中文安装与实验教程：[`gds-hcache/README.zh-CN.md`](gds-hcache/README.zh-CN.md)
+- 无GPU开发机可以关闭CUDA/GDS/io_uring，仅编译和测试cache状态机。
+
 ## 1) Project overview
 
 This project is a C++17 benchmark prototype for evaluating file I/O paths that move data to/from GPU memory, with a focus on GPUDirect Storage (GDS) registration overhead.
