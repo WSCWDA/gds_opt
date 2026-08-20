@@ -17,6 +17,9 @@ struct Options {
   std::size_t cache_capacity = 1ULL << 30;
   std::size_t cache_line_size = 64ULL << 10;
   std::size_t host_max_io_size = 64ULL << 10;
+  // One io_uring fixed-buffer registration covers many cache lines.
+  // The backend may increase this value to stay below IOV_MAX.
+  std::size_t fixed_buffer_region_size = 64ULL << 20;
   unsigned queue_depth = 64;
   int cuda_device = 0;
   bool enable_cache = true;

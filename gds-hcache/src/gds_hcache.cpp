@@ -33,9 +33,12 @@ struct Context::Impl {
       : options(std::move(opts)),
         pool(options.cache_capacity, options.cache_line_size),
         cache(pool.slots(), [this](std::size_t) { ++evictions; }),
-        uring(pool, options.queue_depth) {
+        uring(pool, options.queue_depth, options.fixed_buffer_region_size) {
     if (!power_of_two(options.cache_line_size) || options.cache_line_size < 4096)
       throw std::invalid_argument("cache_line_size must be power-of-two and >= 4096");
+    if (options.fixed_buffer_region_size < options.cache_line_size)
+      throw std::invalid_argument(
+          "fixed_buffer_region_size must be >= cache_line_size");
 #if GHC_ENABLE_CUDA
     const auto rc = cudaSetDevice(options.cuda_device);
     if (rc != cudaSuccess) throw std::runtime_error(cudaGetErrorString(rc));

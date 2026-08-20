@@ -34,6 +34,8 @@ int main(int argc, char** argv) try {
   options.cache_capacity = std::stoull(value(argc, argv, "cache-bytes", "268435456"));
   options.cache_line_size = std::stoull(value(argc, argv, "line-size", "65536"));
   options.host_max_io_size = std::stoull(value(argc, argv, "host-max", "65536"));
+  options.fixed_buffer_region_size =
+      std::stoull(value(argc, argv, "fixed-buffer-bytes", "67108864"));
   options.cuda_device = std::stoi(value(argc, argv, "device", "0"));
   options.enable_cache = value(argc, argv, "cache", "1") != "0";
 

@@ -12,6 +12,8 @@
 - `(file_handle, aligned block offset)`作为cache key；
 - 相同块并发miss采用single-flight，只提交一次存储I/O；
 - LRU clean-line淘汰和容量硬上限。
+- 多个cache line聚合到同一个io_uring fixed-buffer注册区，默认每区64MiB；
+  因此1GiB cache只占16个注册项，不会触发`UIO_MAXIOV`限制。
 
 暂不支持写入、多进程共享、外部writer一致性、跨cache-line小读、非对齐GDS拆分和在线代价模型。
 
@@ -109,6 +111,7 @@ CUDA_VISIBLE_DEVICES=0 ./build/ghc_bench \
   --line-size=65536 \
   --host-max=65536 \
   --cache-bytes=1073741824 \
+  --fixed-buffer-bytes=67108864 \
   --hot-bytes=67108864 \
   --requests=100000 \
   --cache=1
@@ -130,6 +133,10 @@ CUDA_VISIBLE_DEVICES=0 ./build/ghc_bench \
 - `storage_bytes`：Host miss实际从SSD读取的字节数；
 - `h2d_bytes`：Host cache复制到GPU的字节数；
 - `evictions`：cache容量不足产生的clean-line淘汰数。
+
+`--fixed-buffer-bytes`控制一个io_uring注册区的大小，而不是cache fill
+大小。即使注册区为64MiB，4KiB请求仍只按`--line-size`指定的64KiB
+进行cache fill，不会一次读取64MiB。
 
 ## 7. 运行最小实验矩阵
 
@@ -157,6 +164,8 @@ nvidia-smi dmon -s putcm
 4. 一次可缓存读取不能跨越cache line；跨line请求当前回到GDS。
 5. `O_DIRECT`实际对齐依赖内核和文件系统；本版要求line size至少4KiB且为2的幂，后续加入`STATX_DIOALIGN`自动探测。
 6. 当前io_uring对象采用同步提交/等待，MVP用于证明缓存收益，后续版本再实现多in-flight异步队列。
+7. 每个fixed-buffer注册区最大1GiB；程序会按`IOV_MAX`自动增大注册区，
+   避免大cache产生过多iovec。注册失败时会输出errno文字、注册区数量和大小。
 
 ## 9. MVP验收标准
 
